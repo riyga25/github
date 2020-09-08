@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.riyga.github.DetailActivity.Companion.DETAIL_FULL_NAME
 
 class RepoAdapter(private val repos: List<Repo>): RecyclerView.Adapter<RepoViewHolder>(){
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RepoViewHolder {
@@ -39,14 +40,14 @@ class RepoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         description.text = repo.description
         Glide.with(itemView).load(repo.owner_avatar).into(avatar);
 
-//        itemView.setOnClickListener(){
-//            openDetail(itemView.context, cat)
-//        }
+        itemView.setOnClickListener(){
+            openDetail(itemView.context, repo)
+        }
     }
 
-//    private fun openDetail(context: Context, cat: Cat) {
-//        val intent = Intent(context, DetailActivity::class.java)
-//        intent.putExtra(CAT_DETAIL_TEXT, cat.text)
-//        context.startActivity(intent)
-//    }
+    private fun openDetail(context: Context, repo: Repo) {
+        val intent = Intent(context, DetailActivity::class.java)
+        intent.putExtra(DETAIL_FULL_NAME, repo.full_name)
+        context.startActivity(intent)
+    }
 }

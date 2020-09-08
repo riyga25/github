@@ -9,6 +9,8 @@ import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import io.realm.Realm
+import io.realm.RealmConfiguration
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONArray
 
@@ -19,8 +21,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        initRealm()
+        showReposFromDB()
         val queue = Volley.newRequestQueue(this)
-
         getData(queue)
     }
 
@@ -30,9 +33,8 @@ class MainActivity : AppCompatActivity() {
             url,
             { response ->
                 val repos = parseResponse(response)
-//                saveIntoDB(catList)
-//                showCatsFromDB()
-                setList(repos)
+                saveIntoDB(repos)
+                showReposFromDB()
             },
             { Toast.makeText(this, "Request error", Toast.LENGTH_SHORT).show() }
         )
@@ -44,6 +46,8 @@ class MainActivity : AppCompatActivity() {
         val repos: MutableList<Repo> = mutableListOf()
         val jsonArray = JSONArray(responseText)
         for (index in 0 until jsonArray.length()) {
+            val repo = Repo()
+
             val jsonObject = jsonArray.getJSONObject(index)
             val name = jsonObject.getString("name")
             val id = jsonObject.getInt("id")
@@ -54,7 +58,13 @@ class MainActivity : AppCompatActivity() {
             val owner_avatar = ownerObject.getString("avatar_url")
             val owner_login = ownerObject.getString("login")
 
-            val repo = Repo(id, name, full_name, description, owner_id, owner_login, owner_avatar)
+            repo.id = id.toString()
+            repo.name = name
+            repo.full_name = full_name
+            repo.description = description
+            repo.owner_id = owner_id.toString()
+            repo.owner_avatar = owner_avatar
+            repo.owner_login = owner_login
 
             repos.add(repo)
         }
@@ -75,5 +85,30 @@ class MainActivity : AppCompatActivity() {
 
         val layoutManager = LinearLayoutManager(this)
         recyclerId.layoutManager = layoutManager
+    }
+
+    private fun initRealm() {
+        Realm.init(this)
+        val config = RealmConfiguration.Builder()
+            .deleteRealmIfMigrationNeeded()
+            .build()
+        Realm.setDefaultConfiguration(config)
+    }
+
+    private fun saveIntoDB(repos: List<Repo>) {
+        val realm = Realm.getDefaultInstance()
+        realm.beginTransaction()
+        realm.copyToRealm(repos)
+        realm.commitTransaction()
+    }
+
+    private fun loadFromDB(): List<Repo> {
+        val realm = Realm.getDefaultInstance()
+        return realm.where(Repo::class.java).findAll()
+    }
+
+    private fun showReposFromDB() {
+        val repos = loadFromDB()
+        setList(repos)
     }
 }
