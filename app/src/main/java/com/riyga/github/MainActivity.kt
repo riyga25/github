@@ -1,6 +1,8 @@
 package com.riyga.github
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -11,7 +13,8 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import io.realm.Realm
 import io.realm.RealmConfiguration
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main.bottom_navigation
+import kotlinx.android.synthetic.main.activity_main.recyclerId
 import org.json.JSONArray
 
 
@@ -22,9 +25,26 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initRealm()
+        navigationListener()
         showReposFromDB()
         val queue = Volley.newRequestQueue(this)
         getData(queue)
+    }
+
+    private fun navigationListener() {
+        bottom_navigation.setOnNavigationItemSelectedListener () {item ->
+            when(item.itemId) {
+                R.id.fav_screen -> {
+                    val intent = Intent(this, FavoritesActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent)
+
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun getData(queue: RequestQueue) {
