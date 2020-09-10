@@ -1,109 +1,35 @@
 package com.riyga.github
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
+import android.os.PersistableBundle
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.android.volley.Request
-import com.android.volley.RequestQueue
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
+import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
 import io.realm.Realm
 import io.realm.RealmConfiguration
-import kotlinx.android.synthetic.main.activity_main.bottom_navigation
-import kotlinx.android.synthetic.main.activity_main.recyclerId
-import org.json.JSONArray
-
 
 class MainActivity : AppCompatActivity() {
-    private val url = "https://api.github.com/repositories"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        initRealm()
-        navigationListener()
-        showReposFromDB()
-        val queue = Volley.newRequestQueue(this)
-        getData(queue)
-    }
+        val navView: BottomNavigationView = findViewById(R.id.nav_view)
 
-    private fun navigationListener() {
-        bottom_navigation.setOnNavigationItemSelectedListener () {item ->
-            when(item.itemId) {
-                R.id.fav_screen -> {
-                    val intent = Intent(this, FavoritesActivity::class.java)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent)
-
-                    true
-                }
-                else -> false
-            }
-        }
-    }
-
-    private fun getData(queue: RequestQueue) {
-        val stringRequest = StringRequest(
-            Request.Method.GET,
-            url,
-            { response ->
-                val repos = parseResponse(response)
-                saveIntoDB(repos)
-                showReposFromDB()
-            },
-            { Toast.makeText(this, "Request error", Toast.LENGTH_SHORT).show() }
-        )
-
-        queue.add(stringRequest)
-    }
-
-    private fun parseResponse(responseText: String): List<Repo> {
-        val repos: MutableList<Repo> = mutableListOf()
-        val jsonArray = JSONArray(responseText)
-        for (index in 0 until jsonArray.length()) {
-            val repo = Repo()
-
-            val jsonObject = jsonArray.getJSONObject(index)
-            val name = jsonObject.getString("name")
-            val id = jsonObject.getInt("id")
-            val full_name = jsonObject.getString("full_name")
-            val description = jsonObject.getString("description")
-            val ownerObject = jsonObject.getJSONObject("owner")
-            val owner_id = ownerObject.getInt("id")
-            val owner_avatar = ownerObject.getString("avatar_url")
-            val owner_login = ownerObject.getString("login")
-
-            repo.id = id.toString()
-            repo.name = name
-            repo.full_name = full_name
-            repo.description = description
-            repo.owner_id = owner_id.toString()
-            repo.owner_avatar = owner_avatar
-            repo.owner_login = owner_login
-
-            repos.add(repo)
-        }
-
-        return repos
-    }
-
-    private fun setList(repos: List<Repo>) {
-        val adapter = RepoAdapter(repos)
-        recyclerId.adapter = adapter
-
-        recyclerId.addItemDecoration(
-            DividerItemDecoration(
-                this,
-                DividerItemDecoration.VERTICAL
+        val navController = findNavController(R.id.nav_host_fragment)
+        // Passing each menu ID as a set of Ids because each
+        // menu should be considered as top level destinations.
+        val appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.navigation_home, R.id.navigation_favorites
             )
         )
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        navView.setupWithNavController(navController)
 
-        val layoutManager = LinearLayoutManager(this)
-        recyclerId.layoutManager = layoutManager
+        initRealm()
     }
 
     private fun initRealm() {
@@ -113,26 +39,5 @@ class MainActivity : AppCompatActivity() {
             .deleteRealmIfMigrationNeeded()
             .build()
         Realm.setDefaultConfiguration(config)
-    }
-
-    private fun saveIntoDB(repos: List<Repo>) {
-        val realm = Realm.getDefaultInstance()
-        val db_repos = realm.where(Repo::class.java).findAll()
-
-        if(db_repos == null){ // TODO костыль - сохранять только если пусто
-            realm.executeTransaction {
-                realm.copyToRealm(repos)
-            }
-        }
-    }
-
-    private fun loadFromDB(): List<Repo> {
-        val realm = Realm.getDefaultInstance()
-        return realm.where(Repo::class.java).findAll()
-    }
-
-    private fun showReposFromDB() {
-        val repos = loadFromDB()
-        setList(repos)
     }
 }
