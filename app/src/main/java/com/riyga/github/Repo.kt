@@ -1,6 +1,5 @@
 package com.riyga.github
 
-import io.realm.RealmList
 import io.realm.RealmObject
 
 open class Repo: RealmObject() {

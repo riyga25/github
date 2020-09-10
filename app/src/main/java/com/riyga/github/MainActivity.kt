@@ -2,7 +2,6 @@ package com.riyga.github
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -109,6 +108,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initRealm() {
         Realm.init(this)
+
         val config = RealmConfiguration.Builder()
             .deleteRealmIfMigrationNeeded()
             .build()
@@ -117,9 +117,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveIntoDB(repos: List<Repo>) {
         val realm = Realm.getDefaultInstance()
-        realm.beginTransaction()
-        realm.copyToRealm(repos)
-        realm.commitTransaction()
+        val db_repos = realm.where(Repo::class.java).findAll()
+
+        if(db_repos == null){ // TODO костыль - сохранять только если пусто
+            realm.executeTransaction {
+                realm.copyToRealm(repos)
+            }
+        }
     }
 
     private fun loadFromDB(): List<Repo> {
