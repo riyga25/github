@@ -1,18 +1,26 @@
 package com.riyga.github
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
 import io.realm.Realm
+import io.realm.internal.android.ISO8601Utils
 import io.realm.kotlin.where
 import kotlinx.android.synthetic.main.activity_detail.*
 import org.json.JSONArray
+import java.text.ParsePosition
+import java.text.SimpleDateFormat
+import java.util.*
+
 
 class DetailActivity : AppCompatActivity() {
     companion object {
@@ -24,8 +32,8 @@ class DetailActivity : AppCompatActivity() {
         setContentView(R.layout.activity_detail)
         setActionBar()
         getRepoFromDB()
-//        val queue = Volley.newRequestQueue(this)
-//        getCommits(queue)
+        val queue = Volley.newRequestQueue(this)
+        getCommits(queue)
     }
 
     private fun getRepoFromDB() {
@@ -44,29 +52,35 @@ class DetailActivity : AppCompatActivity() {
         detailDescription.text = repo.description
         detailTitle.text = repo.name
         Glide.with(this).load(repo.owner_avatar).into(avatar);
-
+        setList(repo.commits)
     }
 
-//    private fun getCommits(queue: RequestQueue) {
-//        val full_name = intent?.extras?.getString(DETAIL_FULL_NAME)
-//
-//        if (full_name != null) {
-//            val url = "https://api.github.com/repos/$full_name/commits"
-//
-//            val stringRequest = StringRequest(
-//                Request.Method.GET,
-//                url,
-//                { response ->
-//                    val commits = parseResponse(response)
-//                    saveIntoDB(commits, full_name)
-//                },
-//                { Toast.makeText(this, "Request error", Toast.LENGTH_SHORT).show() }
-//            )
-//
-//            queue.add(stringRequest)
-//        }
-//
-//    }
+    private fun getCommits(queue: RequestQueue) {
+        val full_name = intent?.extras?.getString(DETAIL_FULL_NAME)
+        commits_progressBar.visibility = View.VISIBLE
+
+        if (full_name != null) {
+            val url = "https://api.github.com/repos/$full_name/commits"
+
+            val stringRequest = StringRequest(
+                Request.Method.GET,
+                url,
+                { response ->
+                    val commits = parseResponse(response)
+                    saveIntoDB(commits, full_name)
+                    commits_progressBar.visibility = View.GONE
+                    setList(commits)
+                },
+                {
+                    commits_progressBar.visibility = View.GONE
+                    Toast.makeText(this, "Request error", Toast.LENGTH_SHORT).show()
+                }
+            )
+
+            queue.add(stringRequest)
+        }
+
+    }
 
     private fun setActionBar() {
         supportActionBar?.apply {
@@ -81,37 +95,79 @@ class DetailActivity : AppCompatActivity() {
         return true
     }
 
-//    private fun saveIntoDB(commits: List<Commit>, full_name: String) {
-//        val realm = Realm.getDefaultInstance()
-//
-//        realm.executeTransaction {
-//            val repo = realm.where<Repo>().equalTo("full_name", full_name).findFirst()
-//            repo?.commits = commits.toTypedArray()
-//        }
-//    }
+    private fun saveIntoDB(commits: List<Commit>, full_name: String) {
+        val realm = Realm.getDefaultInstance()
 
-//    private fun parseResponse(responseText: String): List<Commit> {
-//        val commits: MutableList<Commit> = mutableListOf()
-//        val jsonArray = JSONArray(responseText)
-//        for (index in 0 until jsonArray.length()) {
-//            val commit = Commit()
-//
-//            val jsonObject = jsonArray.getJSONObject(index)
-//            val sha = jsonObject.getString("sha")
-//            val commitObject = jsonObject.getJSONObject("commit")
-//            val authorObject = commitObject.getJSONObject("author")
-//            val message = commitObject.getString("message")
-//            val name = authorObject.getString("name")
-//            val date = authorObject.getString("date")
-//
-//            commit.sha = sha
-//            commit.author = name
-//            commit.message = message
-//            commit.date = date
-//
-//            commits.add(commit)
-//        }
-//
-//        return commits
-//    }
+        realm.executeTransaction {
+            val repo = realm.where<Repo>().equalTo("full_name", full_name).findFirst()
+            repo?.commits?.addAll(commits)
+        }
+    }
+
+    private fun parseResponse(responseText: String): List<Commit> {
+        val commits: MutableList<Commit> = mutableListOf()
+        val jsonArray = JSONArray(responseText)
+        for (index in 0 until jsonArray.length()) {
+            val commit = Commit()
+
+            val jsonObject = jsonArray.getJSONObject(index)
+            val sha = jsonObject.getString("sha")
+            val commitObject = jsonObject.getJSONObject("commit")
+            val commitAuthorObject = commitObject.getJSONObject("author")
+            val message = commitObject.getString("message")
+            var name = commitAuthorObject.getString("name")
+            val date = commitAuthorObject.getString("date")
+
+            if(!jsonObject.isNull("author")){
+                val authorObject = jsonObject.getJSONObject("author")
+                name = authorObject.getString("login")
+                val avatar = authorObject.getString("avatar_url")
+                commit.avatar = avatar
+            }
+
+            commit.sha = sha
+            commit.message = message
+            commit.date = date
+            commit.author = name
+
+            commits.add(commit)
+        }
+
+        return if(commits.size > 10){
+            commits.subList(0, 10)
+        } else {
+            commits
+        }
+    }
+
+    private fun setList(commits: List<Commit>) {
+        val list = findViewById<LinearLayout>(R.id.commits_list)
+
+        fun formatDate(dateString: String): String {
+            val pattern = "yyyy-MM-dd"
+            val date = ISO8601Utils.parse(dateString, ParsePosition(0))
+            val simpleDateFormat = SimpleDateFormat(pattern, Locale.getDefault())
+            return simpleDateFormat.format(date)
+        }
+
+        commits.forEach{
+            val child = layoutInflater.inflate(R.layout.commit_item, list, false)
+            val name: TextView = child.findViewById(R.id.authorName)
+            val message: TextView = child.findViewById(R.id.commitMessage)
+            val date: TextView = child.findViewById(R.id.commitDate)
+            val avatar: ImageView = child.findViewById(R.id.commit_avatar)
+
+            name.text = it.author
+            message.text = it.message
+            date.text = formatDate(it.date)
+
+            if(it.avatar != ""){
+                Glide.with(child).load(it.avatar).into(avatar);
+            } else {
+                avatar.visibility = View.GONE
+            }
+
+            list.addView(child)
+        }
+    }
 }

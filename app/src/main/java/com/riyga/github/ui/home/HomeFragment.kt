@@ -114,12 +114,9 @@ class HomeFragment : Fragment() {
 
     private fun saveIntoDB(repos: List<Repo>) {
         val realm = Realm.getDefaultInstance()
-        val db_repos = realm.where(Repo::class.java).findAll()
-
-        if(db_repos == null || db_repos.size == 0){ // TODO костыль - сохранять только если пусто
-            realm.executeTransaction {
-                realm.copyToRealm(repos)
-            }
+        realm.executeTransaction {
+            realm.deleteAll()
+            realm.copyToRealm(repos)
         }
     }
 
