@@ -115,8 +115,7 @@ class HomeFragment : Fragment() {
     private fun saveIntoDB(repos: List<Repo>) {
         val realm = Realm.getDefaultInstance()
         realm.executeTransaction {
-            realm.deleteAll()
-            realm.copyToRealm(repos)
+            realm.insertOrUpdate(repos)
         }
     }
 

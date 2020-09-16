@@ -4,9 +4,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
-import com.riyga.github.R
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.riyga.github.*
+import io.realm.Realm
+import io.realm.kotlin.oneOf
+import io.realm.kotlin.where
+import kotlinx.android.synthetic.main.fragment_favorites.*
 
 class FavoritesFragment : Fragment() {
 
@@ -22,5 +29,42 @@ class FavoritesFragment : Fragment() {
         val root = inflater.inflate(R.layout.fragment_favorites, container, false)
 
         return root
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        showReposFromDB()
+    }
+
+    private fun setList(repos: List<Repo>) {
+        val adapter = FavoritesAdapter(repos)
+        recyclerId?.adapter = adapter
+
+        recyclerId?.addItemDecoration(
+            DividerItemDecoration(
+                context,
+                DividerItemDecoration.VERTICAL
+            )
+        )
+
+        val layoutManager = LinearLayoutManager(context)
+        recyclerId?.layoutManager = layoutManager
+    }
+
+    private fun loadFromDB(): List<Repo> {
+        val realm = Realm.getDefaultInstance()
+        val favoritesIds = realm.where<FavoriteRepos>().findFirst()?.list
+        var repos: MutableList<Repo> = mutableListOf()
+
+        if(favoritesIds != null){
+            repos = realm.where<Repo>().oneOf("id", favoritesIds.toTypedArray()).findAll()
+        }
+
+        return repos
+    }
+
+    private fun showReposFromDB() {
+        val repos = loadFromDB()
+        setList(repos)
     }
 }
