@@ -12,6 +12,8 @@ import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
+import com.riyga.github.model.Commit
+import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.internal.android.ISO8601Utils
 import io.realm.kotlin.where

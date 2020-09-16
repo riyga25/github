@@ -1,4 +1,4 @@
-package com.riyga.github
+package com.riyga.github.model
 
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey

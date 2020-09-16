@@ -10,6 +10,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.riyga.github.DetailActivity.Companion.DETAIL_FULL_NAME
+import com.riyga.github.model.FavoriteRepos
+import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.kotlin.where
 
