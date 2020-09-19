@@ -39,8 +39,8 @@ class FavoritesViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
     private val description: TextView = itemView.findViewById(R.id.item_description_id)
     private val avatar: ImageView = itemView.findViewById(R.id.item_avatar_id)
     private val favorite: ImageView = itemView.findViewById(R.id.list_favorite_id)
-    val realm = Realm.getDefaultInstance()
-    val favorites = realm.where<FavoriteRepos>().findFirst()?.list
+    val realm: Realm = Realm.getDefaultInstance()
+    private val favorites = realm.where<FavoriteRepos>().findFirst()?.list
 
     fun bind(repo: Repo){
         name.text = repo.full_name

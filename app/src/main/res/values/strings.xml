@@ -2,7 +2,8 @@
     <string name="app_name">GitHub</string>
     <string name="title_home">Home</string>
     <string name="title_favorites">Favorites</string>
-    <string name="prompt_email">Email</string>
+    <string name="prompt_username">Username</string>
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Sign in</string>
+    <string name="action_login_error">Incorrect password or username</string>
 </resources>

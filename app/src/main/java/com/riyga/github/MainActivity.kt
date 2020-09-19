@@ -1,5 +1,6 @@
 package com.riyga.github
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -8,6 +9,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.riyga.github.model.Params
 import io.realm.Realm
 import io.realm.RealmConfiguration
 
@@ -16,11 +18,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val navView: BottomNavigationView = findViewById(R.id.nav_view)
 
+        initRealm()
+        Api().init()
+        checkToken()
+        initNavigation()
+    }
+
+    private fun initNavigation() {
+        val navView: BottomNavigationView = findViewById(R.id.nav_view)
         val navController = findNavController(R.id.nav_host_fragment)
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
         val appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.navigation_home, R.id.navigation_favorites
@@ -28,8 +35,6 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
-
-        initRealm()
     }
 
     private fun initRealm() {
@@ -39,5 +44,18 @@ class MainActivity : AppCompatActivity() {
             .deleteRealmIfMigrationNeeded()
             .build()
         Realm.setDefaultConfiguration(config)
+    }
+
+    private fun checkToken() {
+        if(getToken() == null) {
+            this.startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
+    }
+
+    private fun getToken(): String? {
+        val realm: Realm = Realm.getDefaultInstance()
+        val params = realm.where(Params::class.java).findFirst()
+        return params?.token
     }
 }
