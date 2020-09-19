@@ -9,11 +9,9 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.riyga.github.*
-import com.riyga.github.model.FavoriteRepos
 import com.riyga.github.model.Repo
 import io.realm.Realm
-import io.realm.kotlin.oneOf
-import io.realm.kotlin.where
+import io.realm.RealmResults
 import kotlinx.android.synthetic.main.fragment_favorites.*
 
 class FavoritesFragment : Fragment() {
@@ -37,7 +35,7 @@ class FavoritesFragment : Fragment() {
         showReposFromDB()
     }
 
-    private fun setList(repos: List<Repo>) {
+    private fun setList(repos: RealmResults<Repo>) {
         val adapter = FavoritesAdapter(repos)
         recyclerId?.adapter = adapter
 
@@ -52,16 +50,9 @@ class FavoritesFragment : Fragment() {
         recyclerId?.layoutManager = layoutManager
     }
 
-    private fun loadFromDB(): List<Repo> {
+    private fun loadFromDB(): RealmResults<Repo> {
         val realm = Realm.getDefaultInstance()
-        val favoritesIds = realm.where<FavoriteRepos>().findFirst()?.list
-        var repos: MutableList<Repo> = mutableListOf()
-
-        if(favoritesIds != null){
-            repos = realm.where<Repo>().oneOf("id", favoritesIds.toTypedArray()).findAll()
-        }
-
-        return repos
+        return realm.where(Repo::class.java).equalTo("favorite", true).findAll()
     }
 
     private fun showReposFromDB() {

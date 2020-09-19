@@ -10,12 +10,15 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.riyga.github.DetailActivity.Companion.DETAIL_FULL_NAME
-import com.riyga.github.model.FavoriteRepos
 import com.riyga.github.model.Repo
 import io.realm.Realm
+import io.realm.RealmRecyclerViewAdapter
+import io.realm.RealmResults
 import io.realm.kotlin.where
 
-class RepoAdapter(private val repos: List<Repo>): RecyclerView.Adapter<RepoViewHolder>(){
+
+class RepoAdapter(private val repos: RealmResults<Repo>) :
+    RealmRecyclerViewAdapter<Repo, RepoViewHolder>(repos, true, true) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RepoViewHolder {
         val rootView = LayoutInflater
             .from(parent.context)
@@ -25,7 +28,7 @@ class RepoAdapter(private val repos: List<Repo>): RecyclerView.Adapter<RepoViewH
     }
 
     override fun onBindViewHolder(holder: RepoViewHolder, position: Int) {
-        holder.bind(repos[position])
+        repos[position]?.let { holder.bind(it) }
     }
 
     override fun getItemCount(): Int {
@@ -34,51 +37,37 @@ class RepoAdapter(private val repos: List<Repo>): RecyclerView.Adapter<RepoViewH
 
 }
 
-class RepoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+class RepoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val name: TextView = itemView.findViewById(R.id.item_name_id)
     private val description: TextView = itemView.findViewById(R.id.item_description_id)
     private val avatar: ImageView = itemView.findViewById(R.id.item_avatar_id)
     private val favorite: ImageView = itemView.findViewById(R.id.list_favorite_id)
     val realm = Realm.getDefaultInstance()
-    private val favorites = realm.where<FavoriteRepos>().findFirst()?.list
 
-    fun bind(repo: Repo){
+    fun bind(repo: Repo) {
         name.text = repo.full_name
         description.text = repo.description
         Glide.with(itemView).load(repo.owner_avatar).into(avatar);
 
-        itemView.setOnClickListener(){
+        itemView.setOnClickListener() {
             openDetail(itemView.context, repo)
         }
 
-        if(favorites != null && favorites.contains(repo.id)){
+        if (repo.favorite) {
             setFavoriteImage(true)
         }
 
-        favorite.setOnClickListener{
-            println(favorites)
-
-            realm.executeTransaction{
-                val isExist = favorites?.indexOf(repo.id)
-
-                if (isExist != null) {
-                    if(isExist >= 0) {
-                        favorites?.remove(repo.id)
-                        setFavoriteImage(false)
-                    } else {
-                        favorites?.add(repo.id)
-                        setFavoriteImage(true)
-                    }
-                } else {
-                    val fav = realm.createObject(FavoriteRepos::class.java)
-                    fav.list.addAll(mutableListOf(repo.id))
-                }
+        favorite.setOnClickListener {
+            realm.executeTransaction {
+                val dbRepo = realm.where(Repo::class.java).equalTo("id", repo.id).findFirst()
+                dbRepo?.favorite = !repo.favorite
             }
         }
     }
 
     private fun setFavoriteImage(isFavorite: Boolean) {
-        if(isFavorite){
+        println(isFavorite)
+        if (isFavorite) {
             favorite.setImageResource(R.drawable.ic_baseline_star)
         } else {
             favorite.setImageResource(R.drawable.ic_baseline_star_border)

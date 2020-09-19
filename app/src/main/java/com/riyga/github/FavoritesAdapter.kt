@@ -10,12 +10,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.riyga.github.DetailActivity.Companion.DETAIL_FULL_NAME
-import com.riyga.github.model.FavoriteRepos
 import com.riyga.github.model.Repo
 import io.realm.Realm
+import io.realm.RealmRecyclerViewAdapter
+import io.realm.RealmResults
 import io.realm.kotlin.where
 
-class FavoritesAdapter(private val repos: List<Repo>): RecyclerView.Adapter<FavoritesViewHolder>(){
+class FavoritesAdapter(private val repos: RealmResults<Repo>): RealmRecyclerViewAdapter<Repo, FavoritesViewHolder>(repos, true, true) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FavoritesViewHolder {
         val rootView = LayoutInflater
             .from(parent.context)
@@ -25,7 +26,7 @@ class FavoritesAdapter(private val repos: List<Repo>): RecyclerView.Adapter<Favo
     }
 
     override fun onBindViewHolder(holder: FavoritesViewHolder, position: Int) {
-        holder.bind(repos[position])
+        repos[position]?.let { holder.bind(it) }
     }
 
     override fun getItemCount(): Int {
@@ -40,7 +41,6 @@ class FavoritesViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
     private val avatar: ImageView = itemView.findViewById(R.id.item_avatar_id)
     private val favorite: ImageView = itemView.findViewById(R.id.list_favorite_id)
     val realm: Realm = Realm.getDefaultInstance()
-    private val favorites = realm.where<FavoriteRepos>().findFirst()?.list
 
     fun bind(repo: Repo){
         name.text = repo.full_name
@@ -54,7 +54,8 @@ class FavoritesViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
         favorite.setOnClickListener{
             realm.executeTransaction{
-                favorites?.remove(repo.id)
+                val dbRepo = realm.where(Repo::class.java).equalTo("id", repo.id).findFirst()
+                dbRepo?.favorite = false
             }
         }
     }

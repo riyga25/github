@@ -16,6 +16,7 @@ import com.riyga.github.R
 import com.riyga.github.model.Repo
 import com.riyga.github.RepoAdapter
 import io.realm.Realm
+import io.realm.RealmResults
 import kotlinx.android.synthetic.main.fragment_home.*
 import org.json.JSONArray
 
@@ -67,6 +68,10 @@ class HomeFragment : Fragment() {
     private fun parseResponse(responseText: String): List<Repo> {
         val repos: MutableList<Repo> = mutableListOf()
         val jsonArray = JSONArray(responseText)
+        val realm: Realm = Realm.getDefaultInstance()
+        val favRepos = realm.where(Repo::class.java).equalTo("favorite", true).findAll()
+            .map { repo -> repo.id }
+
         for (index in 0 until jsonArray.length()) {
             val repo = Repo()
 
@@ -87,6 +92,7 @@ class HomeFragment : Fragment() {
             repo.owner_id = owner_id.toString()
             repo.owner_avatar = owner_avatar
             repo.owner_login = owner_login
+            repo.favorite = favRepos.contains(id.toString())
 
             repos.add(repo)
         }
@@ -94,7 +100,7 @@ class HomeFragment : Fragment() {
         return repos
     }
 
-    private fun setList(repos: List<Repo>) {
+    private fun setList(repos: RealmResults<Repo>) {
         val adapter = RepoAdapter(repos)
         recyclerId?.adapter = adapter
 
@@ -116,7 +122,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun loadFromDB(): List<Repo> {
+    private fun loadFromDB(): RealmResults<Repo> {
         val realm = Realm.getDefaultInstance()
         return realm.where(Repo::class.java).findAll()
     }
