@@ -1,4 +1,4 @@
-package com.riyga.github.ui.home
+package com.riyga.github
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,26 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.android.volley.Request
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
-import com.riyga.github.R
 import com.riyga.github.model.Repo
-import com.riyga.github.RepoAdapter
 import io.realm.Realm
 import io.realm.RealmResults
 import kotlinx.android.synthetic.main.fragment_home.*
 import org.json.JSONArray
 
 class HomeFragment : Fragment() {
-    private val url = "https://api.github.com/repositories"
-    private lateinit var homeViewModel: HomeViewModel
+    private lateinit var realm: Realm
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        realm = Realm.getDefaultInstance()
         getData()
     }
 
@@ -34,22 +28,26 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        homeViewModel =
-            ViewModelProviders.of(this).get(HomeViewModel::class.java)
-        val root = inflater.inflate(R.layout.fragment_home, container, false)
-        showReposFromDB()
+        return inflater.inflate(R.layout.fragment_home, container, false)
+    }
 
-        return root
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        showReposFromDB()
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        realm.close()
     }
 
     private fun getData() {
-        val queue = Volley.newRequestQueue(context)
         val progress = activity?.findViewById<View>(R.id.progressBar)
         progress?.visibility = View.VISIBLE
 
-        val stringRequest = StringRequest(
-            Request.Method.GET,
-            url,
+        val stringRequest = ApiService().get(
+            context,
+            "/repositories",
             { response ->
                 val repos = parseResponse(response)
                 saveIntoDB(repos)
@@ -61,14 +59,11 @@ class HomeFragment : Fragment() {
                 Toast.makeText(context, "Request error", Toast.LENGTH_SHORT).show()
             }
         )
-
-        queue.add(stringRequest)
     }
 
     private fun parseResponse(responseText: String): List<Repo> {
         val repos: MutableList<Repo> = mutableListOf()
         val jsonArray = JSONArray(responseText)
-        val realm: Realm = Realm.getDefaultInstance()
         val favRepos = realm.where(Repo::class.java).equalTo("favorite", true).findAll()
             .map { repo -> repo.id }
 
@@ -102,28 +97,25 @@ class HomeFragment : Fragment() {
 
     private fun setList(repos: RealmResults<Repo>) {
         val adapter = RepoAdapter(repos)
-        recyclerId?.adapter = adapter
+        val layoutManager = LinearLayoutManager(context)
 
-        recyclerId?.addItemDecoration(
+        reposList?.adapter = adapter
+        reposList?.layoutManager = layoutManager
+        reposList?.addItemDecoration(
             DividerItemDecoration(
                 context,
                 DividerItemDecoration.VERTICAL
             )
         )
-
-        val layoutManager = LinearLayoutManager(context)
-        recyclerId?.layoutManager = layoutManager
     }
 
     private fun saveIntoDB(repos: List<Repo>) {
-        val realm = Realm.getDefaultInstance()
         realm.executeTransaction {
             realm.insertOrUpdate(repos)
         }
     }
 
     private fun loadFromDB(): RealmResults<Repo> {
-        val realm = Realm.getDefaultInstance()
         return realm.where(Repo::class.java).findAll()
     }
 

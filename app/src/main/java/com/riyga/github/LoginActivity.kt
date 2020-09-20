@@ -12,13 +12,13 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.android.volley.VolleyError
 import com.riyga.github.model.Params
 import com.riyga.github.model.User
 import io.realm.Realm
 import org.json.JSONObject
 
 class LoginActivity : AppCompatActivity() {
+    lateinit var realm: Realm
     lateinit var username: EditText
     lateinit var password: EditText
     lateinit var login: Button
@@ -27,8 +27,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_login)
+        realm = Realm.getDefaultInstance()
 
         username = findViewById(R.id.username)
         password = findViewById(R.id.password)
@@ -47,8 +47,8 @@ class LoginActivity : AppCompatActivity() {
         })
 
         password.setOnEditorActionListener { _, actionId, _ ->
-            if(actionId == EditorInfo.IME_ACTION_DONE){
-                if(password.text.trim().isNotEmpty() && username.text.trim().isNotEmpty()){
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                if (password.text.trim().isNotEmpty() && username.text.trim().isNotEmpty()) {
                     signIn()
                 }
                 true
@@ -72,6 +72,11 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        realm.close()
+    }
+
     private fun signIn() {
         loading.visibility = View.VISIBLE
         errorMessage.visibility = View.GONE
@@ -80,24 +85,21 @@ class LoginActivity : AppCompatActivity() {
             "${username.text}:${password.text}".toByteArray(),
             Base64.DEFAULT
         )
-        val realm: Realm = Realm.getDefaultInstance()
 
         realm.executeTransaction {
             val params = it.createObject(Params::class.java)
             params.token = base64
         }
 
-        Api().get(
+        ApiService().get(
             this,
             "/user",
             { r -> successLogin(r) },
-            { r -> failedLogin(r) })
-        realm.close()
+            { failedLogin() })
     }
 
     private fun successLogin(response: String) {
         val user = parseResponse(response)
-        val realm: Realm = Realm.getDefaultInstance()
 
         realm.executeTransaction {
             val userObject = realm.createObject(User::class.java, user.id)
@@ -106,20 +108,16 @@ class LoginActivity : AppCompatActivity() {
         }
         loading.visibility = View.GONE
         this.startActivity(Intent(this, MainActivity::class.java))
-        realm.close()
         finish()
     }
 
-    private fun failedLogin(response: VolleyError) {
-        val realm: Realm = Realm.getDefaultInstance()
-
+    private fun failedLogin() {
         realm.executeTransaction {
             val params = it.where(Params::class.java).findFirst()
             params?.deleteFromRealm()
         }
         loading.visibility = View.GONE
         errorMessage.visibility = View.VISIBLE
-        realm.close()
     }
 
     private fun validate(pass: String, name: String) {

@@ -1,12 +1,10 @@
 package com.riyga.github.model
 
-import com.riyga.github.model.Commit
 import io.realm.RealmList
 import io.realm.RealmObject
-import io.realm.annotations.Ignore
 import io.realm.annotations.PrimaryKey
 
-open class Repo: RealmObject() {
+open class Repo : RealmObject() {
     @PrimaryKey
     lateinit var id: String
     lateinit var name: String

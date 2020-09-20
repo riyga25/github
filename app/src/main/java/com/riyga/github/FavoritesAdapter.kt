@@ -14,9 +14,9 @@ import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.RealmRecyclerViewAdapter
 import io.realm.RealmResults
-import io.realm.kotlin.where
 
-class FavoritesAdapter(private val repos: RealmResults<Repo>): RealmRecyclerViewAdapter<Repo, FavoritesViewHolder>(repos, true, true) {
+class FavoritesAdapter(private val repos: RealmResults<Repo>) :
+    RealmRecyclerViewAdapter<Repo, FavoritesViewHolder>(repos, true, true) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FavoritesViewHolder {
         val rootView = LayoutInflater
             .from(parent.context)
@@ -35,25 +35,25 @@ class FavoritesAdapter(private val repos: RealmResults<Repo>): RealmRecyclerView
 
 }
 
-class FavoritesViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+class FavoritesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val name: TextView = itemView.findViewById(R.id.item_name_id)
     private val description: TextView = itemView.findViewById(R.id.item_description_id)
     private val avatar: ImageView = itemView.findViewById(R.id.item_avatar_id)
     private val favorite: ImageView = itemView.findViewById(R.id.list_favorite_id)
     val realm: Realm = Realm.getDefaultInstance()
 
-    fun bind(repo: Repo){
+    fun bind(repo: Repo) {
         name.text = repo.full_name
         description.text = repo.description
-        Glide.with(itemView).load(repo.owner_avatar).into(avatar);
+        Glide.with(itemView).load(repo.owner_avatar).into(avatar)
         favorite.setImageResource(R.drawable.ic_baseline_star)
 
-        itemView.setOnClickListener(){
+        itemView.setOnClickListener {
             openDetail(itemView.context, repo)
         }
 
-        favorite.setOnClickListener{
-            realm.executeTransaction{
+        favorite.setOnClickListener {
+            realm.executeTransaction {
                 val dbRepo = realm.where(Repo::class.java).equalTo("id", repo.id).findFirst()
                 dbRepo?.favorite = false
             }

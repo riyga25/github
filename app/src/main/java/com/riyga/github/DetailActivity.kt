@@ -7,10 +7,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.android.volley.Request
-import com.android.volley.RequestQueue
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
 import com.riyga.github.model.Commit
 import com.riyga.github.model.Repo
@@ -25,6 +21,7 @@ import java.util.*
 
 
 class DetailActivity : AppCompatActivity() {
+    private lateinit var realm: Realm
     companion object {
         const val DETAIL_FULL_NAME = "com.riyga.github.detail_full_name"
     }
@@ -33,15 +30,19 @@ class DetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_detail)
         setActionBar()
+        realm = Realm.getDefaultInstance()
         getRepoFromDB()
-        val queue = Volley.newRequestQueue(this)
-        getCommits(queue)
+        getCommits()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        realm.close()
     }
 
     private fun getRepoFromDB() {
-        val realm = Realm.getDefaultInstance()
-        val full_name = intent?.extras?.getString(DETAIL_FULL_NAME)
-        val repo = realm.where<Repo>().equalTo("full_name", full_name).findFirst()
+        val value = intent?.extras?.getString(DETAIL_FULL_NAME)
+        val repo = realm.where<Repo>().equalTo("full_name", value).findFirst()
 
         if(repo != null) {
             showData(repo)
@@ -53,20 +54,18 @@ class DetailActivity : AppCompatActivity() {
         detailOwnerName.text = repo.owner_login
         detailDescription.text = repo.description
         detailTitle.text = repo.name
-        Glide.with(this).load(repo.owner_avatar).into(avatar);
+        Glide.with(this).load(repo.owner_avatar).into(avatar)
         setList(repo.commits)
     }
 
-    private fun getCommits(queue: RequestQueue) {
+    private fun getCommits() {
         val full_name = intent?.extras?.getString(DETAIL_FULL_NAME)
         commits_progressBar.visibility = View.VISIBLE
 
         if (full_name != null) {
-            val url = "https://api.github.com/repos/$full_name/commits"
-
-            val stringRequest = StringRequest(
-                Request.Method.GET,
-                url,
+            ApiService().get(
+                this,
+                "/repos/$full_name/commits",
                 { response ->
                     val commits = parseResponse(response)
                     saveIntoDB(commits, full_name)
@@ -78,8 +77,6 @@ class DetailActivity : AppCompatActivity() {
                     Toast.makeText(this, "Request error", Toast.LENGTH_SHORT).show()
                 }
             )
-
-            queue.add(stringRequest)
         }
 
     }
@@ -98,8 +95,6 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun saveIntoDB(commits: List<Commit>, full_name: String) {
-        val realm = Realm.getDefaultInstance()
-
         realm.executeTransaction {
             val repo = realm.where<Repo>().equalTo("full_name", full_name).findFirst()
             repo?.commits?.addAll(commits)

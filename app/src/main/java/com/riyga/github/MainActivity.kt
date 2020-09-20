@@ -2,7 +2,6 @@ package com.riyga.github
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -20,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         initRealm()
-        Api().init()
+        ApiService().init()
         checkToken()
         initNavigation()
     }

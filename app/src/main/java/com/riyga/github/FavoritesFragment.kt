@@ -1,38 +1,41 @@
-package com.riyga.github.ui.favorites
+package com.riyga.github
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.riyga.github.*
 import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.RealmResults
 import kotlinx.android.synthetic.main.fragment_favorites.*
 
 class FavoritesFragment : Fragment() {
+    private lateinit var realm: Realm
 
-    private lateinit var dashboardViewModel: FavoritesViewModel
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        realm = Realm.getDefaultInstance()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        dashboardViewModel =
-            ViewModelProviders.of(this).get(FavoritesViewModel::class.java)
-        val root = inflater.inflate(R.layout.fragment_favorites, container, false)
-
-        return root
+        return inflater.inflate(R.layout.fragment_favorites, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         showReposFromDB()
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        realm.close()
     }
 
     private fun setList(repos: RealmResults<Repo>) {
@@ -51,7 +54,6 @@ class FavoritesFragment : Fragment() {
     }
 
     private fun loadFromDB(): RealmResults<Repo> {
-        val realm = Realm.getDefaultInstance()
         return realm.where(Repo::class.java).equalTo("favorite", true).findAll()
     }
 

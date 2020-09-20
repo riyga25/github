@@ -12,7 +12,7 @@ import com.riyga.github.model.Params
 import com.riyga.github.model.User
 import io.realm.Realm
 
-class Api {
+class ApiService {
     private val BASE_URL = "https://api.github.com"
     private var TOKEN = ""
 
@@ -21,27 +21,27 @@ class Api {
     }
 
     fun get(
-        context: Context,
+        context: Context?,
         requestUrl: String,
         success: Response.Listener<String>,
         error: Response.ErrorListener?
     ) {
         val queue = Volley.newRequestQueue(context)
 
-        if(TOKEN == ""){
+        if (TOKEN == "") {
             getCredentials()
         }
 
-        val stringRequest = object: StringRequest(
+        val stringRequest = object : StringRequest(
             Request.Method.GET,
             "${BASE_URL}${requestUrl}",
             success,
             error
-        ){
+        ) {
             override fun getHeaders(): MutableMap<String, String> {
                 val headers = HashMap<String, String>()
 
-                if(TOKEN != ""){
+                if (TOKEN != "") {
                     headers["Authorization"] = "Basic $TOKEN"
                 }
                 return headers

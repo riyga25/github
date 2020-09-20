@@ -14,8 +14,6 @@ import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.RealmRecyclerViewAdapter
 import io.realm.RealmResults
-import io.realm.kotlin.where
-
 
 class RepoAdapter(private val repos: RealmResults<Repo>) :
     RealmRecyclerViewAdapter<Repo, RepoViewHolder>(repos, true, true) {
@@ -42,19 +40,19 @@ class RepoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val description: TextView = itemView.findViewById(R.id.item_description_id)
     private val avatar: ImageView = itemView.findViewById(R.id.item_avatar_id)
     private val favorite: ImageView = itemView.findViewById(R.id.list_favorite_id)
-    val realm = Realm.getDefaultInstance()
+    val realm: Realm = Realm.getDefaultInstance()
 
     fun bind(repo: Repo) {
         name.text = repo.full_name
         description.text = repo.description
-        Glide.with(itemView).load(repo.owner_avatar).into(avatar);
+        Glide.with(itemView).load(repo.owner_avatar).into(avatar)
 
-        itemView.setOnClickListener() {
+        itemView.setOnClickListener {
             openDetail(itemView.context, repo)
         }
 
         if (repo.favorite) {
-            setFavoriteImage(true)
+            favorite.setImageResource(R.drawable.ic_baseline_star)
         }
 
         favorite.setOnClickListener {
@@ -62,15 +60,6 @@ class RepoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
                 val dbRepo = realm.where(Repo::class.java).equalTo("id", repo.id).findFirst()
                 dbRepo?.favorite = !repo.favorite
             }
-        }
-    }
-
-    private fun setFavoriteImage(isFavorite: Boolean) {
-        println(isFavorite)
-        if (isFavorite) {
-            favorite.setImageResource(R.drawable.ic_baseline_star)
-        } else {
-            favorite.setImageResource(R.drawable.ic_baseline_star_border)
         }
     }
 
