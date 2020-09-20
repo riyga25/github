@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.RealmResults
@@ -34,6 +35,9 @@ class HomeFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         showReposFromDB()
+        swipeContainer?.setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener {
+            getData()
+        })
     }
 
     override fun onDetach() {
@@ -52,10 +56,12 @@ class HomeFragment : Fragment() {
                 val repos = parseResponse(response)
                 saveIntoDB(repos)
                 progress?.visibility = View.INVISIBLE
+                swipeContainer?.isRefreshing = false
                 showReposFromDB()
             },
             {
                 progress?.visibility = View.INVISIBLE
+                swipeContainer?.isRefreshing = false
                 Toast.makeText(context, "Request error", Toast.LENGTH_SHORT).show()
             }
         )
