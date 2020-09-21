@@ -11,4 +11,9 @@
         android:icon="@drawable/ic_baseline_star_border"
         android:title="@string/title_favorites" />
 
+    <item
+        android:id="@+id/navigation_user"
+        android:icon="@drawable/ic_baseline_person_outline"
+        android:title="@string/title_user" />
+
 </menu>
