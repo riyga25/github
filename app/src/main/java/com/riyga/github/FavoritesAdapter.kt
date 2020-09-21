@@ -1,15 +1,13 @@
 package com.riyga.github
 
-import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.riyga.github.DetailActivity.Companion.DETAIL_FULL_NAME
 import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.RealmRecyclerViewAdapter
@@ -49,7 +47,7 @@ class FavoritesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         favorite.setImageResource(R.drawable.ic_baseline_star)
 
         itemView.setOnClickListener {
-            openDetail(itemView.context, repo)
+            openDetail(repo)
         }
 
         favorite.setOnClickListener {
@@ -60,9 +58,8 @@ class FavoritesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         }
     }
 
-    private fun openDetail(context: Context, repo: Repo) {
-        val intent = Intent(context, DetailActivity::class.java)
-        intent.putExtra(DETAIL_FULL_NAME, repo.full_name)
-        context.startActivity(intent)
+    private fun openDetail(repo: Repo) {
+        val action = FavoritesFragmentDirections.actionNavigationFavoritesToDetailFragment(repo.full_name)
+        itemView.findNavController().navigate(action)
     }
 }

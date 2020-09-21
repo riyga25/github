@@ -28,8 +28,8 @@ class FavoritesFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_favorites, container, false)
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         showReposFromDB()
     }
 
@@ -40,9 +40,9 @@ class FavoritesFragment : Fragment() {
 
     private fun setList(repos: RealmResults<Repo>) {
         val adapter = FavoritesAdapter(repos)
-        recyclerId?.adapter = adapter
+        recyclerId.adapter = adapter
 
-        recyclerId?.addItemDecoration(
+        recyclerId.addItemDecoration(
             DividerItemDecoration(
                 context,
                 DividerItemDecoration.VERTICAL
@@ -50,7 +50,7 @@ class FavoritesFragment : Fragment() {
         )
 
         val layoutManager = LinearLayoutManager(context)
-        recyclerId?.layoutManager = layoutManager
+        recyclerId.layoutManager = layoutManager
     }
 
     private fun loadFromDB(): RealmResults<Repo> {

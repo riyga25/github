@@ -32,10 +32,10 @@ class HomeFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         showReposFromDB()
-        swipeContainer?.setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener {
+        swipeContainer.setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener {
             getData()
         })
     }
@@ -49,7 +49,7 @@ class HomeFragment : Fragment() {
         val progress = activity?.findViewById<View>(R.id.progressBar)
         progress?.visibility = View.VISIBLE
 
-        val stringRequest = ApiService().get(
+        ApiService().get(
             context,
             "/repositories",
             { response ->

@@ -1,102 +1,105 @@
 package com.riyga.github
 
 import android.os.Bundle
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.fragment.navArgs
 import com.bumptech.glide.Glide
 import com.riyga.github.model.Commit
 import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.internal.android.ISO8601Utils
 import io.realm.kotlin.where
-import kotlinx.android.synthetic.main.activity_detail.*
+import kotlinx.android.synthetic.main.fragment_detail.*
 import org.json.JSONArray
 import java.text.ParsePosition
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-class DetailActivity : AppCompatActivity() {
+class DetailFragment : Fragment() {
+    private val args: DetailFragmentArgs by navArgs()
     private lateinit var realm: Realm
-    companion object {
-        const val DETAIL_FULL_NAME = "com.riyga.github.detail_full_name"
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_detail)
-        setActionBar()
+        setHasOptionsMenu(true)
         realm = Realm.getDefaultInstance()
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_detail, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         getRepoFromDB()
         getCommits()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == android.R.id.home) {
+            activity?.onBackPressed();
+            return true;
+        };
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onDetach() {
+        super.onDetach()
         realm.close()
     }
 
     private fun getRepoFromDB() {
-        val value = intent?.extras?.getString(DETAIL_FULL_NAME)
-        val repo = realm.where<Repo>().equalTo("full_name", value).findFirst()
-
+        val repo = realm.where<Repo>().equalTo("full_name", args.fullName).findFirst()
         if(repo != null) {
             showData(repo)
         }
     }
 
     private fun showData(repo: Repo) {
-        val avatar = findViewById<ImageView>(R.id.detailOwnerPic)
+        val avatar = activity?.findViewById<ImageView>(R.id.detailOwnerPic)
         detailOwnerName.text = repo.owner_login
         detailDescription.text = repo.description
         detailTitle.text = repo.name
-        Glide.with(this).load(repo.owner_avatar).into(avatar)
+        if (avatar != null) {
+            Glide.with(this).load(repo.owner_avatar).into(avatar)
+        }
         setList(repo.commits)
     }
 
     private fun getCommits() {
-        val full_name = intent?.extras?.getString(DETAIL_FULL_NAME)
         commits_progressBar.visibility = View.VISIBLE
 
-        if (full_name != null) {
-            ApiService().get(
-                this,
-                "/repos/$full_name/commits",
-                { response ->
-                    val commits = parseResponse(response)
-                    saveIntoDB(commits, full_name)
-                    commits_progressBar.visibility = View.GONE
-                    setList(commits)
-                },
-                {
-                    commits_progressBar.visibility = View.GONE
-                    Toast.makeText(this, "Request error", Toast.LENGTH_SHORT).show()
-                }
-            )
-        }
+        ApiService().get(
+            context,
+            "/repos/${args.fullName}/commits",
+            { response ->
+                val commits = parseResponse(response)
+                saveIntoDB(commits)
+                commits_progressBar.visibility = View.GONE
+                setList(commits)
+            },
+            {
+                commits_progressBar.visibility = View.GONE
+                Toast.makeText(context, "Request error", Toast.LENGTH_SHORT).show()
+            }
+        )
 
     }
 
-    private fun setActionBar() {
-        supportActionBar?.apply {
-            setDisplayShowHomeEnabled(true)
-            setDisplayHomeAsUpEnabled(true)
-            title = ""
-        }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
-    }
-
-    private fun saveIntoDB(commits: List<Commit>, full_name: String) {
+    private fun saveIntoDB(commits: List<Commit>) {
         realm.executeTransaction {
-            val repo = realm.where<Repo>().equalTo("full_name", full_name).findFirst()
+            val repo = realm.where<Repo>().equalTo("full_name", args.fullName).findFirst()
             repo?.commits?.addAll(commits)
         }
     }
@@ -138,7 +141,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun setList(commits: List<Commit>) {
-        val list = findViewById<LinearLayout>(R.id.commits_list)
+        val list = activity?.findViewById<LinearLayout>(R.id.commits_list)
 
         fun formatDate(dateString: String): String {
             val pattern = "yyyy-MM-dd"
@@ -159,12 +162,12 @@ class DetailActivity : AppCompatActivity() {
             date.text = formatDate(it.date)
 
             if(it.avatar != ""){
-                Glide.with(child).load(it.avatar).into(avatar);
+                Glide.with(child).load(it.avatar).into(avatar)
             } else {
                 avatar.visibility = View.GONE
             }
 
-            list.addView(child)
+            list?.addView(child)
         }
     }
 }
