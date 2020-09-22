@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -13,7 +14,12 @@ import com.riyga.github.model.Repo
 import io.realm.Realm
 import io.realm.RealmResults
 import kotlinx.android.synthetic.main.fragment_home.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
 
 class HomeFragment : Fragment() {
     private lateinit var realm: Realm
@@ -55,6 +61,10 @@ class HomeFragment : Fragment() {
             { response ->
                 val repos = parseResponse(response)
                 saveIntoDB(repos)
+
+                lifecycleScope.launch {
+                    getAdditionalInfo()
+                }
                 progress?.visibility = View.INVISIBLE
                 swipeContainer?.isRefreshing = false
                 showReposFromDB()
@@ -128,5 +138,29 @@ class HomeFragment : Fragment() {
     private fun showReposFromDB() {
         val repos = loadFromDB()
         setList(repos)
+    }
+
+    private suspend fun getAdditionalInfo() {
+        withContext(Dispatchers.IO) {
+            launch {
+                Realm.getDefaultInstance().executeTransaction {
+                    val dbRepos = it.where(Repo::class.java).findAll()
+                    dbRepos.subList(0, 5).map { repo ->
+                        ApiService().get(
+                            context,
+                            "/repos/${repo.full_name}",
+                            { response ->
+                                val jsonObject = JSONObject(response)
+                                println(jsonObject.getInt("stargazers_count"))
+                                repo.stargazers_count = jsonObject.getInt("stargazers_count")
+                                repo.language = jsonObject.getString("language")
+                                repo.forks_count = jsonObject.getInt("forks_count")
+                            }, {}
+                        )
+                    }
+                }
+            }
+
+        }
     }
 }

@@ -38,10 +38,12 @@ class RepoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val description: TextView = itemView.findViewById(R.id.item_description_id)
     private val avatar: ImageView = itemView.findViewById(R.id.item_avatar_id)
     private val favorite: ImageView = itemView.findViewById(R.id.list_favorite_id)
+    private val stars: TextView = itemView.findViewById(R.id.item_stars)
 
     fun bind(repo: Repo) {
         name.text = repo.full_name
         description.text = repo.description
+        stars.text = repo.stargazers_count.toString()
         Glide.with(itemView).load(repo.owner_avatar).into(avatar)
 
         if (repo.favorite) {

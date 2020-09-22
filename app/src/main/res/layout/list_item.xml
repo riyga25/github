@@ -62,7 +62,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/cardView"
+            app:layout_constraintStart_toEndOf="@+id/item_stars"
             app:layout_constraintTop_toBottomOf="@+id/item_name_id" />
+
+        <TextView
+            android:id="@+id/item_stars"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/cardView"
+            app:layout_constraintTop_toBottomOf="@+id/item_description_id" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
