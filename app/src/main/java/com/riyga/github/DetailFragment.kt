@@ -26,11 +26,13 @@ import java.util.*
 class DetailFragment : Fragment() {
     private val args: DetailFragmentArgs by navArgs()
     private lateinit var realm: Realm
+    private var repo: Repo? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
         realm = Realm.getDefaultInstance()
+        repo = realm.where<Repo>().equalTo("full_name", args.fullName).findFirst()
     }
 
     override fun onCreateView(
@@ -44,6 +46,16 @@ class DetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         getRepoFromDB()
         getCommits()
+
+        repo?.addChangeListener<Repo> {results ->
+            setFavoriteImage(results.favorite)
+        }
+
+        detailFavorite.setOnClickListener{
+            realm.executeTransaction{
+                repo?.favorite = !repo?.favorite!!
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -60,10 +72,7 @@ class DetailFragment : Fragment() {
     }
 
     private fun getRepoFromDB() {
-        val repo = realm.where<Repo>().equalTo("full_name", args.fullName).findFirst()
-        if(repo != null) {
-            showData(repo)
-        }
+        repo?.let { showData(it) }
     }
 
     private fun showData(repo: Repo) {
@@ -71,10 +80,20 @@ class DetailFragment : Fragment() {
         detailOwnerName.text = repo.owner_login
         detailDescription.text = repo.description
         detailTitle.text = repo.name
+
         if (avatar != null) {
             Glide.with(this).load(repo.owner_avatar).into(avatar)
         }
+        setFavoriteImage(repo.favorite)
         setList(repo.commits)
+    }
+
+    private fun setFavoriteImage(isFavorite: Boolean) {
+        if (isFavorite) {
+            detailFavorite?.setImageResource(R.drawable.ic_baseline_star)
+        } else {
+            detailFavorite?.setImageResource(R.drawable.ic_baseline_star_border)
+        }
     }
 
     private fun getCommits() {
@@ -99,7 +118,6 @@ class DetailFragment : Fragment() {
 
     private fun saveIntoDB(commits: List<Commit>) {
         realm.executeTransaction {
-            val repo = realm.where<Repo>().equalTo("full_name", args.fullName).findFirst()
             repo?.commits?.addAll(commits)
         }
     }
